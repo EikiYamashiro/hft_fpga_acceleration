@@ -11,7 +11,15 @@
 
 int main(int argc, char *argv[]) {
 
-    FILE* prices;
+    FILE * fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t readf;
+
+    fp = fopen("gen_prices.txt", "r");
+    if (fp == NULL)
+        exit(EXIT_FAILURE);
+
     int sock = 0, connfd = 0;
     char sendBuff[1025];
 	char recvBuff[1025];
@@ -23,7 +31,6 @@ int main(int argc, char *argv[]) {
      */
     unlink(SOCKET_NAME);
 
-    prices = fopen("gen_prices.txt", "r");
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 
     struct sockaddr_un name;
@@ -39,29 +46,33 @@ int main(int argc, char *argv[]) {
 
     while(1) {
 
+        while ((readf = getline(&line, &len, fp)) != -1) {
 
+            printf("Enviando valor: %f \n", atof(line));
+            
+            // write
+            snprintf(sendBuff, sizeof(sendBuff), line);
+            write(connfd, sendBuff, strlen(sendBuff));
 
-        // write
-        snprintf(sendBuff, sizeof(sendBuff), fgetc(prices));
-        write(connfd, sendBuff, strlen(sendBuff));
+            // read and print
+            int n = 0;
+            if ((n = read(connfd, recvBuff, sizeof(recvBuff)-1)) > 0) {
+                recvBuff[n] = 0;
+                printf("Ordem Recebida: ");
+                fputs(recvBuff, stdout);
+            }
 
-        // read and print
-        int n = 0;
-        if ((n = read(connfd, recvBuff, sizeof(recvBuff)-1)) > 0) {
-            recvBuff[n] = 0;
-            fputs(recvBuff, stdout);
+            sleep(1);
         }
 
-        if (feof(prices)){
-            break;
-        }
+        fclose(fp);
+        if (line)
+            free(line);
+        exit(EXIT_SUCCESS);
 
-        sleep(1);
+        
     }
-    fclose(prices);
 
     close(connfd);
     sleep(1);
-
-    return 0;
 }
