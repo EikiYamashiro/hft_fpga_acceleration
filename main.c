@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
                 fputs(recvBuff, stdout);
             }
 
-            sleep(1);
         }
 
         fclose(fp);
@@ -74,5 +73,4 @@ int main(int argc, char *argv[]) {
     }
 
     close(connfd);
-    sleep(1);
 }
